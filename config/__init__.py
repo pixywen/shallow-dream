@@ -1,0 +1,3 @@
+
+DEBUG = True
+DEBUG_PANEL = False

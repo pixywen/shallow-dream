@@ -1,0 +1,4 @@
+
+
+SCREEN_RESOLUTION = (0, 0)
+RM = None
