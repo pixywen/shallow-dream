@@ -7,7 +7,7 @@ from airtest.core.api import wait, sleep, device
 from common import constants
 from common.tools import process_target_panel, swipe_with_salting, zoom_with_salting, init_env, click, scene_map_reset, \
     deploy_gem_squad_ex, get_troop_num_ex, get_current_coordinates, \
-    coordinate_parser
+    coordinate_parser, send_card_notification
 from config.log import MainLogger
 from airtest.core.helper import G
 from model.mine import MineStack, Mine
@@ -85,8 +85,8 @@ def action(step):
     MainLogger.info(f"坐标: ({x}, {y}), 距离: {d} KM")
 
     # 若首轮，则不作任何动作(等同于初始一屏随机移动，防止城市的矿点反复影响判定)
-    # if step == 0:
-    #     return True
+    if step <= 2:
+        return True
 
     if step >= 100:
         return False
@@ -134,7 +134,7 @@ def walk_random():
                 turn_round = turn_round + 1
                 turn_step = 0
 
-                delta_step = random.randint(2, 5)
+                delta_step = random.randint(3, 5)
 
                 if rotation_direction == 1:
                     direction_index = direction_array.index(direction)
@@ -188,6 +188,13 @@ def sentinel(sleep_time=0.01, need_reset=False):
 
         # 判定是否到了休眠时间(或活跃时间段)
         _screen = G.DEVICE.snapshot(quality=1)
+
+        # 判定是否有验证
+        verify = constants.RM.get("BTN_VERIFY").match_in(_screen)
+        if verify:
+            MainLogger.info("验证界面")
+            return False
+
         _troop_num = get_troop_num_ex(_screen)
 
         if _troop_num == 0 and not need_reset:
@@ -209,13 +216,19 @@ def sentinel(sleep_time=0.01, need_reset=False):
 
     except Exception as e:
         MainLogger.error("哨兵异常: ", e)
+        raise e
         return False
 
 
-def greedy_miner(adb_serial, host, port):
-    MainLogger.info("I'm a greedy miner...")
+def stop_greedy_miner():
+    global GREEDY_MINER_RUNNING
+    GREEDY_MINER_RUNNING = False
 
-    global STACK, TARGET_STACK
+
+def init_miner(adb_serial, host, port, city=(0, 0)):
+    global STACK, TARGET_STACK, CITY, GREEDY_MINER_RUNNING
+
+    CITY = city
 
     STACK = MineStack()
     TARGET_STACK = MineStack()
@@ -225,15 +238,57 @@ def greedy_miner(adb_serial, host, port):
         MainLogger.info(f"屏幕 分辨率: {CR}")
     except Exception as e:
         MainLogger.error("环境初始化失败 : ", e)
-        exit(1)
+
+
+def greedy_miner_ex():
+
+    MainLogger.info("I'm a greedy miner...")
+
+    try:
+
+        GREEDY_MINER_RUNNING = True
+
+        while GREEDY_MINER_RUNNING and sentinel():
+            sleep(5)
+            zoom_with_salting()
+            sleep(5)
+            walk_random()
+            sleep(5)
+
+    except Exception as e:
+        MainLogger.info(e)
+
+    MainLogger.info("greedy miner exit...")
+    send_card_notification("", "哨兵下线，请检查")
+
+
+def greedy_miner(adb_serial, host, port, city=(0, 0)):
+    MainLogger.info("I'm a greedy miner...")
+
+    global STACK, TARGET_STACK, CITY
+
+    CITY = city
+
+    STACK = MineStack()
+    TARGET_STACK = MineStack()
+
+    try:
+        CR, R, Dev = init_env(adb_serial, host, port)
+        MainLogger.info(f"屏幕 分辨率: {CR}")
+    except Exception as e:
+        MainLogger.error("环境初始化失败 : ", e)
 
     # 判断是否满足激活条件
+
     while sentinel():
         sleep(5)
         zoom_with_salting()
         sleep(5)
         walk_random()
         sleep(5)
+
+    MainLogger.info("greedy miner exit...")
+    send_card_notification("", "哨兵下线，请检查")
 
 
 if __name__ == '__main__':
@@ -268,4 +323,4 @@ if __name__ == '__main__':
     # host = '127.0.0.1'
     # port = '5037'
 
-    greedy_miner(adb_serial, host, port)
+    greedy_miner(adb_serial, host, port, args.city)

@@ -33,6 +33,8 @@ R = None
 pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
 
 
+
+
 def time_to_seconds(time_str):
     try:
         hours, minutes, seconds = map(int, time_str.split(':'))

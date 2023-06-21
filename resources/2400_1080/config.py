@@ -187,6 +187,13 @@ config = {
             "th": 0.95
         },
 
+        # 矿点面板-分享
+        "BTN_VERIFY": {
+            "path": "btn_verification.png",
+            "r": (2400, 1080),
+            "th": 0.90
+        },
+
     },
     "points": {
 

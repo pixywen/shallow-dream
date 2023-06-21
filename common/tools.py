@@ -1,9 +1,11 @@
 import argparse
+import json
 import math
 import random
 import re
 
 import cv2
+import requests
 from airtest.aircv import aircv
 from airtest.core.android.touch_methods.base_touch import DownEvent, SleepEvent, MoveEvent, UpEvent
 from airtest.core.api import connect_device, device, touch, sleep, exists, wait, keyevent
@@ -17,6 +19,47 @@ from config.log import MainLogger
 from const.resource_manager import ResourceManager
 from exception.exception import TroopsNumLimitedError, MarchMonitorError, MarchTimeExceededError
 from model.points import point
+
+
+def send_card_notification(title="", content="验证告警", btn_title="保留", btn_url=""):
+    webhook_url = "https://oapi.dingtalk.com/robot/send?access_token=7981888b00d17ef3548ac9b8e7340d85476ed5797bb7c02376b553c7d430cfa2"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        #'msgtype': 'actionCard',
+        #"msgtype": "link",
+        "msgtype": "text",
+        "text": {
+            "content": "[告警]" + content
+        },
+        # "link": {
+        #     "text": "[告警]" + title + " @15811301691\n",
+        #     "title": content,
+        #     "picUrl": "https://img.36krcdn.com/20211015/v2_6383d28228d14f4eacef60b1fc1695bb_img_000",
+        #     "messageUrl": "https://img.36krcdn.com/20211015/v2_6383d28228d14f4eacef60b1fc1695bb_img_000"
+        # },
+        # 'actionCard': {
+        #     'title': title,
+        #     'text': content,
+        #     'btnOrientation': '1',
+        #     "image": "https://img.36krcdn.com/20211015/v2_6383d28228d14f4eacef60b1fc1695bb_img_000",
+        #     'btns': [
+        #         {
+        #             'title': btn_title,
+        #             'actionURL': btn_url
+        #         }
+        #     ],
+        #
+        # },
+        "at": {
+            "atMobiles": ["15811301691"],
+            #"isAtAll": True
+        }
+    }
+    response = requests.post(webhook_url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        print('Card notification sent successfully.')
+    else:
+        print('Failed to send card notification.')
 
 
 def key_back():
