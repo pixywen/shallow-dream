@@ -216,7 +216,6 @@ def sentinel(sleep_time=0.01, need_reset=False):
 
     except Exception as e:
         MainLogger.error("哨兵异常: ", e)
-        raise e
         return False
 
 
